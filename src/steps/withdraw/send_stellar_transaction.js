@@ -54,7 +54,7 @@ module.exports = {
         StellarSdk.Operation.payment({
           destination: state.anchors_stellar_address,
           asset: asset,
-          amount: state.withdraw_amount,
+          amount: "100",
         }),
       )
       .addMemo(memo)

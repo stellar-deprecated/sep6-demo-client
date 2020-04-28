@@ -2,7 +2,7 @@ const get = require("src/util/get");
 
 module.exports = {
   instruction:
-    "Let the user close the webapp to see the accounts list, and jump back to the deposit url",
+    "Let the user see the accounts list, and jump back to the deposit url",
   autoStart: true,
   execute: async function(
     state,
@@ -12,13 +12,9 @@ module.exports = {
     let showingDepositView = true;
     const poll = async () => {
       const transfer_server = state.transfer_server;
-      const transactionParams = {
-        id: state.transaction_id,
-      };
       request("GET /transaction", transactionParams);
       const transactionResult = await get(
-        `${transfer_server}/transaction`,
-        transactionParams,
+        `${transfer_server}/transaction?id=${state.transaction_id}`,
         {
           headers: {
             Authorization: `Bearer ${state.token}`,
@@ -47,15 +43,11 @@ module.exports = {
 
     function showDepositView() {
       showingDepositView = true;
-      if (state.popup.closed) {
-        state.popup = window.open(
-          state.deposit_url,
-          "popup",
-          "width=320,height=480",
-        );
-      } else {
-        state.popup.window.location = state.deposit_url;
-      }
+      state.popup = window.open(
+        state.deposit_url,
+        "popup",
+        "width=320,height=480",
+      );
       const timer = setInterval(() => {
         if (state.popup.closed) {
           clearInterval(timer);

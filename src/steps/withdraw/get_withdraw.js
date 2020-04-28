@@ -1,54 +1,42 @@
 const StellarSDK = require("stellar-sdk");
 const Config = require("src/config");
 const get = require("src/util/get");
+const crypto = require("crypto");
 
 module.exports = {
-  instruction:
-    "To get the url for the interactive flow, check the /withdraw endpoint",
-  action: "POST /transactions/withdraw/interactive (SEP-0024)",
+  instruction: "Create a withdrawal with the /withdraw endpoint",
+  action: "GET /withdraw (SEP-0006)",
   execute: async function(state, { request, response, instruction, expect }) {
     const ASSET_CODE = Config.get("ASSET_CODE");
     const USER_SK = Config.get("USER_SK");
     const pk = StellarSDK.Keypair.fromSecret(USER_SK).publicKey();
     const transfer_server = state.transfer_server;
+    state.stellar_memo = crypto.randomBytes(32).toString("base64");
+    state.stellar_memo_type = "hash";
     const params = {
       asset_code: ASSET_CODE,
       account: pk,
+      type: "bank_account",
+      dest: "fake account number",
+      dest_extra: "fake routing number",
+      memo_type: state.stellar_memo_type,
+      memo: state.stellar_memo,
     };
-    const email = Config.get("EMAIL_ADDRESS");
-    if (email) {
-      params.email_address = email;
-    }
-    request("POST /transactions/withdraw/interactive", params);
-    const formData = new FormData();
-    Object.keys(params).forEach((key) => formData.append(key, params[key]));
+    request("GET /withdraw", params);
     const resp = await fetch(
-      `${transfer_server}/transactions/withdraw/interactive`,
+      `${transfer_server}/withdraw?${new URLSearchParams(params).toString()}`,
       {
-        method: "POST",
         headers: {
           Authorization: `Bearer ${state.token}`,
         },
-        body: formData,
       },
     );
     const result = await resp.json();
-    response("POST /transactions/withdraw/interactive", result);
+    console.log("got json");
+    response("GET /withdraw", result);
     expect(
-      result.type == "interactive_customer_info_needed",
-      "The only supported type is interactive_customer_info_needed",
+      result.account_id,
+      "GET /withdraw must return 'account_id' from successful request",
     );
-    expect(result.url, "An interactive webapp URL is required");
-    if (Config.get("PUBNET")) {
-      expect(
-        result.url && result.url.indexOf("https://") === 0,
-        "Interactive URLs (and all endpoints) must be served over https",
-      );
-    }
-    instruction(
-      "GET /withdraw tells us we need to collect info interactively.  The URL for the interactive portion is " +
-        result.url,
-    );
-    state.interactive_url = result.url;
   },
 };

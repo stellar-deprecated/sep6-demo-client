@@ -50,8 +50,7 @@ module.exports = {
 
         state.asset_issuer = asset && asset.issuer;
         state.auth_endpoint = information.WEB_AUTH_ENDPOINT;
-        state.transfer_server =
-          information.TRANSFER_SERVER_SEP0024 || information.TRANSFER_SERVER;
+        state.transfer_server = information.TRANSFER_SERVER;
       } catch (e) {
         response(`${HOME_DOMAIN}/.well-known/stellar.toml`, text);
         expect(false, "stellar.toml is not a valid TOML file");

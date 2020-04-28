@@ -27,7 +27,7 @@ const StellarSdk = require("stellar-sdk");
  * @property {string} transaction_id - Anchor identifier for transaction
  *
  * Withdraw
- * @property {string} begin_time - UTC ISO 8601 time that the SEP-24 transaction was kicked off
+ * @property {string} begin_time - UTC ISO 8601 time that the SEP-6 transaction was kicked off
  * @property {string} anchors_stellar_address - Address that the anchor will be expecting payment on for the in-flight transaction
  * @property {string} stellar_memo_type - Memo type for the stellar transaction to specify the anchor's transaction
  * @property {string} stellar_memo - Memo required for the specified stellar transaction
@@ -80,7 +80,6 @@ const withdrawSteps = [
   require("./steps/SEP10/send"),
   require("./steps/withdraw/get_withdraw"),
   require("./steps/withdraw/check_transactions_endpoint"),
-  require("./steps/withdraw/show_interactive_webapp"),
   require("./steps/withdraw/confirm_payment"),
   require("./steps/withdraw/send_stellar_transaction"),
   require("./steps/withdraw/poll_for_success"),
@@ -95,7 +94,6 @@ const depositSteps = [
   require("./steps/SEP10/send"),
   require("./steps/deposit/get_deposit"),
   require("./steps/withdraw/check_transactions_endpoint"),
-  require("./steps/deposit/show_interactive_webapp"),
   require("./steps/deposit/show_close_button"),
 ];
 

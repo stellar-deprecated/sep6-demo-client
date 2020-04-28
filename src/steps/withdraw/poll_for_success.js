@@ -16,15 +16,15 @@ module.exports = {
           id: state.transaction_id,
         };
         request("GET /transaction", transactionParams);
-        const transactionResult = await get(
-          `${transfer_server}/transaction`,
-          transactionParams,
+        const transactionResponse = await fetch(
+          `${transfer_server}/transaction?id=${transactionParams.id}`,
           {
             headers: {
               Authorization: `Bearer ${state.token}`,
             },
           },
         );
+        const transactionResult = await transactionResponse.json();
         response("GET /transaction", transactionResult);
         if (transactionResult.transaction.status === "completed") {
           expect(

@@ -1,6 +1,9 @@
 # Stellar SEP24 Demo Client
-This demo implements the client side of a Stellar [SEP24](https://github.com/stellar/stellar-protocol/blob/master/ecosystem/sep-0024.md) interactive flow.  
-It is automatically deploys from master to http://sep24.stellar.org/ 
+
+This demo implements the client side of a Stellar
+[SEP-6](https://github.com/stellar/stellar-protocol/blob/master/ecosystem/sep-0006.md)
+flow.  
+It is automatically deploys from master to http://sep6.stellar.org/
 
 ## Build and run
 
