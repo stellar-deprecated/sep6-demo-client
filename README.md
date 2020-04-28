@@ -1,4 +1,4 @@
-# Stellar SEP24 Demo Client
+# Stellar SEP-6 Demo Client
 
 This demo implements the client side of a Stellar
 [SEP-6](https://github.com/stellar/stellar-protocol/blob/master/ecosystem/sep-0006.md)
