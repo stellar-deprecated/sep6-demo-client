@@ -16,19 +16,15 @@ module.exports = {
     instruction(
       `We've created the deposit memo ${state.deposit_memo} to listen for a successful deposit`,
     );
-    const params = {
+    let params = {
       asset_code: ASSET_CODE,
       account: pk,
       memo: state.deposit_memo,
       memo_type: state.deposit_memo_type,
       type: "bank_account",
     };
-    const email = Config.get("EMAIL_ADDRESS");
-    if (email) {
-      params.email_address = email;
-    }
     request("GET /deposit", params);
-    const resp = await fetch(
+    let resp = await fetch(
       `${transfer_server}/deposit?` + new URLSearchParams(params).toString(),
       {
         headers: {
@@ -36,16 +32,60 @@ module.exports = {
         },
       },
     );
-    expect(
-      resp.status === 200,
-      "SEP-6 anchor returned non-200 status for GET /deposit: " +
-        `${resp.status}`,
-    );
-    const result = await resp.json();
+    let result = await resp.json();
     response("GET /deposit", result);
-    expect(
-      result.how,
-      "SEP-6 GET /deposit response must include 'how' instructions",
-    );
+
+    if (resp.status === 403) {
+      expect(
+        result.type === "non_interactive_customer_info_needed",
+        "SEP-6 403 response does not have type 'non_interactive_customer_info_needed'",
+      );
+      instruction(
+        "The anchor requires KYC information. Sending a request to /customer",
+      );
+      let put_params = {
+        account: pk,
+        first_name: "Jake",
+        last_name: "Urban",
+        email_address: "jake@stellar.org",
+        bank_number: "fake bank routing number",
+        bank_account_number: "fake bank account number",
+      };
+      request("PUT /customer", put_params);
+      form_data = new FormData();
+      Object.keys(put_params).forEach((key) => {
+        form_data.append(key, put_params[key]);
+      });
+      resp = await fetch(`${transfer_server}/customer`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${state.token}`,
+        },
+        body: form_data,
+      });
+      result = await resp.text();
+      if (result) {
+        response("PUT /customer", result);
+      }
+      expect(resp.status === 202, "SEP-6 /customer returned non-202 status");
+      instruction("Trying request to /deposit again");
+      request("GET /deposit", params);
+      resp = await fetch(
+        `${transfer_server}/deposit?` + new URLSearchParams(params).toString(),
+        {
+          headers: {
+            Authorization: `Bearer ${state.token}`,
+          },
+        },
+      );
+      result = await resp.json();
+      response("GET /deposit", result);
+      expect(resp.status === 200, "Anchor returned non-200 status");
+    } else {
+      expect(
+        result.how,
+        "SEP-6 GET /deposit response must include 'how' instructions",
+      );
+    }
   },
 };

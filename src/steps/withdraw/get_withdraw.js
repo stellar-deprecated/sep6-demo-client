@@ -17,13 +17,13 @@ module.exports = {
       asset_code: ASSET_CODE,
       account: pk,
       type: "bank_account",
-      dest: "fake account number",
-      dest_extra: "fake routing number",
+      dest: "fake bank account number",
+      dest_extra: "fake bank routing number",
       memo_type: state.stellar_memo_type,
       memo: state.stellar_memo,
     };
     request("GET /withdraw", params);
-    const resp = await fetch(
+    let resp = await fetch(
       `${transfer_server}/withdraw?${new URLSearchParams(params).toString()}`,
       {
         headers: {
@@ -31,12 +31,59 @@ module.exports = {
         },
       },
     );
-    const result = await resp.json();
-    console.log("got json");
+    let result = await resp.json();
     response("GET /withdraw", result);
-    expect(
-      result.account_id,
-      "GET /withdraw must return 'account_id' from successful request",
-    );
+    if (resp.status === 403) {
+      expect(
+        result.type === "non_interactive_customer_info_needed",
+        "SEP-6 403 response does not have type 'non_interactive_customer_info_needed'",
+      );
+      instruction(
+        "The anchor requires KYC information. Sending a request to /customer",
+      );
+      let put_params = {
+        account: pk,
+        first_name: "Jake",
+        last_name: "Urban",
+        email_address: "jake@stellar.org",
+        bank_number: "fake bank routing number",
+        bank_account_number: "fake bank account number",
+      };
+      request("PUT /customer", put_params);
+      form_data = new FormData();
+      Object.keys(put_params).forEach((key) => {
+        form_data.append(key, put_params[key]);
+      });
+      resp = await fetch(`${transfer_server}/customer`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${state.token}`,
+        },
+        body: form_data,
+      });
+      result = await resp.text();
+      if (result) {
+        response("PUT /customer", result);
+      }
+      expect(resp.status === 202, "SEP-6 /customer returned non-202 status");
+      instruction("Trying request to /withdraw again");
+      request("GET /withdraw", params);
+      resp = await fetch(
+        `${transfer_server}/withdraw?` + new URLSearchParams(params).toString(),
+        {
+          headers: {
+            Authorization: `Bearer ${state.token}`,
+          },
+        },
+      );
+      result = await resp.json();
+      response("GET /withdraw", result);
+      expect(resp.status === 200, "Anchor returned non-200 status");
+    } else {
+      expect(
+        result.account_id,
+        "GET /withdraw must return 'account_id' from successful request",
+      );
+    }
   },
 };
