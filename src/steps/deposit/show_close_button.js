@@ -6,14 +6,14 @@ module.exports = {
   autoStart: true,
   execute: async function(
     state,
-    { request, response, expect, instruction, setDevicePage },
+    { request, response, instruction, setDevicePage },
   ) {
     let lastStatus = "pending_user_transfer_start";
     let showingDepositView = true;
     const poll = async () => {
       const transfer_server = state.transfer_server;
-      request("GET /transaction", transactionParams);
-      const transactionResult = await get(
+      request("GET /transaction", { id: state.transaction_id });
+      const transactionResponse = await fetch(
         `${transfer_server}/transaction?id=${state.transaction_id}`,
         {
           headers: {
@@ -21,16 +21,21 @@ module.exports = {
           },
         },
       );
+      const transactionResult = await transactionResponse.json();
       response("GET /transaction", transactionResult);
 
       if (lastStatus !== transactionResult.transaction.status) {
         lastStatus = transactionResult.transaction.status;
         instruction(`Status updated to ${lastStatus}`);
-        const urlBuilder = new URL(transactionResult.transaction.more_info_url);
-        urlBuilder.searchParams.set("jwt", state.token);
-        state.deposit_url = urlBuilder.toString();
-        if (showingDepositView) {
-          showDepositView();
+        if (transactionResult.transaction.more_info_url) {
+          const urlBuilder = new URL(
+            transactionResult.transaction.more_info_url,
+          );
+          urlBuilder.searchParams.set("jwt", state.token);
+          state.deposit_url = urlBuilder.toString();
+          if (showingDepositView) {
+            showDepositView();
+          }
         }
       }
       if (transactionResult.transaction.status !== "completed") {
@@ -64,16 +69,6 @@ module.exports = {
 
     return new Promise((resolve, reject) => {
       poll();
-
-      showDepositView();
-      const cb = function(e) {
-        if (e.data.message === "show-transaction") {
-          showDepositView();
-        } else if (e.data.message === "close-button") {
-          showTransactionsView();
-        }
-      };
-      window.addEventListener("message", cb);
     });
   },
 };

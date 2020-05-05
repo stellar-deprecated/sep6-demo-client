@@ -34,8 +34,8 @@ module.exports = {
           "Toml file doesn't contain a WEB_AUTH_ENDPOINT",
         );
         expect(
-          information.TRANSFER_SERVER_SEP0024,
-          "Toml file doesn't contain a TRANSFER_SERVER_SEP0024 field",
+          information.TRANSFER_SERVER,
+          "Toml file doesn't contain a TRANSFER_SERVER field",
         );
         expect(information.CURRENCIES, "Toml file doesn't contain CURRENCIES");
         const asset = information.CURRENCIES.find((c) => c.code === ASSET_CODE);
@@ -51,6 +51,7 @@ module.exports = {
         state.asset_issuer = asset && asset.issuer;
         state.auth_endpoint = information.WEB_AUTH_ENDPOINT;
         state.transfer_server = information.TRANSFER_SERVER;
+        state.kyc_server = information.KYC_SERVER;
       } catch (e) {
         response(`${HOME_DOMAIN}/.well-known/stellar.toml`, text);
         expect(false, "stellar.toml is not a valid TOML file");

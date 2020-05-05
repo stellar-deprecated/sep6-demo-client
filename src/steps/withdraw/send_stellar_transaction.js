@@ -31,16 +31,20 @@ module.exports = {
     const feeStats = await get(`${HORIZON_URL}/fee_stats`);
     let memo;
     try {
-      const memoType = {
-        text: StellarSdk.Memo.text,
-        id: StellarSdk.Memo.id,
-        hash: StellarSdk.Memo.hash,
-      }[state.stellar_memo_type];
-      memo = memoType(state.stellar_memo);
+      if (state.stellar_memo_type === "hash") {
+        let memoHex = Buffer.from(state.stellar_memo, "base64").toString("hex");
+        memo = StellarSdk.Memo.hash(memoHex);
+      } else {
+        const memoType = {
+          text: StellarSdk.Memo.text,
+          id: StellarSdk.Memo.id,
+        }[state.stellar_memo_type];
+        memo = memoType(state.stellar_memo);
+      }
     } catch (e) {
       expect(
         false,
-        `The memo '${state.stellar_memo}' could not be encoded to type ${state.stellar_memo_type}`,
+        `${e.message} The memo '${state.stellar_memo}' could not be encoded to type ${state.stellar_memo_type}`,
       );
     }
 

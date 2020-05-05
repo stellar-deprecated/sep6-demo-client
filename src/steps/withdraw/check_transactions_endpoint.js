@@ -47,9 +47,6 @@ module.exports = {
         state.anchors_stellar_address = transaction.withdraw_anchor_account;
         state.stellar_memo = transaction.withdraw_memo;
         state.stellar_memo_type = transaction.withdraw_memo_type;
-      } else {
-        const urlBuilder = new URL(transaction.more_info_url);
-        state.deposit_url = urlBuilder.toString();
       }
     } catch (e) {
       expect(false, "Something went wrong fetching /transactions");

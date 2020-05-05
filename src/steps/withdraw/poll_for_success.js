@@ -27,13 +27,6 @@ module.exports = {
         const transactionResult = await transactionResponse.json();
         response("GET /transaction", transactionResult);
         if (transactionResult.transaction.status === "completed") {
-          expect(
-            transactionResult.transaction.external_transaction_id ||
-              transactionResult.transaction.more_info_url,
-            "Provide a more_info_url or external_transaction_id to show proper results",
-          );
-          state.external_transaction_id =
-            transactionResult.transaction.external_transaction_id;
           instruction("Success!");
           if (transactionResult.transaction.more_info_url) {
             const urlBuilder = new URL(
@@ -51,8 +44,8 @@ module.exports = {
               "pages/receipt.html?reference_number=" +
                 state.external_transaction_id,
             );
+            resolve();
           }
-          resolve();
         } else if (
           [
             "pending_external",

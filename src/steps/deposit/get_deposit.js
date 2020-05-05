@@ -1,6 +1,7 @@
 const StellarSDK = require("stellar-sdk");
 const Config = require("src/config");
 const crypto = require("crypto");
+const uiactions = require("src/ui/ui-actions");
 
 module.exports = {
   instruction: "Creating deposit transaction using /deposit endpoint",
@@ -10,19 +11,22 @@ module.exports = {
     const USER_SK = Config.get("USER_SK");
     const pk = StellarSDK.Keypair.fromSecret(USER_SK).publicKey();
     const transfer_server = state.transfer_server;
+    const kyc_server = state.kyc_server;
 
     state.deposit_memo = crypto.randomBytes(32).toString("base64");
     state.deposit_memo_type = "hash";
     instruction(
       `We've created the deposit memo ${state.deposit_memo} to listen for a successful deposit`,
     );
-    let params = {
-      asset_code: ASSET_CODE,
-      account: pk,
-      memo: state.deposit_memo,
-      memo_type: state.deposit_memo_type,
-      type: "bank_account",
-    };
+    let params = Object.assign(
+      {
+        asset_code: ASSET_CODE,
+        account: pk,
+        memo: state.deposit_memo,
+        memo_type: state.deposit_memo_type,
+      },
+      state.deposit_values,
+    );
     request("GET /deposit", params);
     let resp = await fetch(
       `${transfer_server}/deposit?` + new URLSearchParams(params).toString(),
@@ -40,23 +44,17 @@ module.exports = {
         result.type === "non_interactive_customer_info_needed",
         "SEP-6 403 response does not have type 'non_interactive_customer_info_needed'",
       );
-      instruction(
-        "The anchor requires KYC information. Sending a request to /customer",
-      );
-      let put_params = {
-        account: pk,
-        first_name: "Jake",
-        last_name: "Urban",
-        email_address: "jake@stellar.org",
-        bank_number: "fake bank routing number",
-        bank_account_number: "fake bank account number",
-      };
+      instruction("The anchor requires KYC information.");
+      let put_params = { account: pk };
+      result.fields.forEach((f) => {
+        put_params[f] = window.prompt(`Enter '${f}':`) || null;
+      });
       request("PUT /customer", put_params);
       form_data = new FormData();
       Object.keys(put_params).forEach((key) => {
         form_data.append(key, put_params[key]);
       });
-      resp = await fetch(`${transfer_server}/customer`, {
+      resp = await fetch(`${kyc_server}/customer`, {
         method: "PUT",
         headers: {
           Authorization: `Bearer ${state.token}`,

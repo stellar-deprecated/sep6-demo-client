@@ -11,17 +11,18 @@ module.exports = {
     const USER_SK = Config.get("USER_SK");
     const pk = StellarSDK.Keypair.fromSecret(USER_SK).publicKey();
     const transfer_server = state.transfer_server;
+    const kyc_server = state.kyc_server;
     state.stellar_memo = crypto.randomBytes(32).toString("base64");
     state.stellar_memo_type = "hash";
-    const params = {
-      asset_code: ASSET_CODE,
-      account: pk,
-      type: "bank_account",
-      dest: "fake bank account number",
-      dest_extra: "fake bank routing number",
-      memo_type: state.stellar_memo_type,
-      memo: state.stellar_memo,
-    };
+    const params = Object.assign(
+      {
+        asset_code: ASSET_CODE,
+        account: pk,
+        memo_type: state.stellar_memo_type,
+        memo: state.stellar_memo,
+      },
+      state.withdraw_values,
+    );
     request("GET /withdraw", params);
     let resp = await fetch(
       `${transfer_server}/withdraw?${new URLSearchParams(params).toString()}`,
@@ -41,20 +42,16 @@ module.exports = {
       instruction(
         "The anchor requires KYC information. Sending a request to /customer",
       );
-      let put_params = {
-        account: pk,
-        first_name: "Jake",
-        last_name: "Urban",
-        email_address: "jake@stellar.org",
-        bank_number: "fake bank routing number",
-        bank_account_number: "fake bank account number",
-      };
+      let put_params = { account: pk };
+      result.fields.forEach((f) => {
+        put_params[f] = window.prompt(`Enter '${f}':`) || null;
+      });
       request("PUT /customer", put_params);
       form_data = new FormData();
       Object.keys(put_params).forEach((key) => {
         form_data.append(key, put_params[key]);
       });
-      resp = await fetch(`${transfer_server}/customer`, {
+      resp = await fetch(`${kyc_server}/customer`, {
         method: "PUT",
         headers: {
           Authorization: `Bearer ${state.token}`,

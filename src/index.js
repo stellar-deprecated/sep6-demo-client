@@ -12,11 +12,9 @@ const StellarSdk = require("stellar-sdk");
  * From stellar.toml
  * @property {string} auth_server - URL hosting the SEP10 auth server
  * @property {string} transfer_server - URL hosting the SEP6 transfer server
+ * @property {string} kyc_server - URL hosting the SEP12 KYC server
  *
  * @property {Window} popup - The popup window for the interactive webapp
- *
- * From /info
- * @property {string} interactive_url - URL hosting the interactive webapp step
  *
  * SEP10
  * @property {string} challenge_transaction - XDR Representation of Stellar challenge transaction signed by server only
@@ -33,12 +31,16 @@ const StellarSdk = require("stellar-sdk");
  * @property {string} stellar_memo - Memo required for the specified stellar transaction
  * @property {string} external_transaction_id - The reference identifier needed to retrieve or confirm the withdrawal
  * @property {string} withdraw_amount - Amount of token to withdraw
+ * @property {object} withdraw_fields - Fields required for /withdraw request by type
+ * @property {object} withdraw_values - Values entered for fields in withdraw_fields
  *
  * Deposit
  * @property {string} asset_issuer - The public key of the asset issuer that we expect a deposit from
  * @property {string} deposit_memo - The memo we asked the anchor to send our funds with
  * @property {string} deposit_type - The memo type we asked the anchor to send our funds with
  * @property {string} deposit_url - The more_info_url used to bring up info on the deposit
+ * @property {object} deposit_fields - Fields required for /deposit request
+ * @property {object} deposit_values - Values entered for fields in deposit_fields
  */
 
 /**
@@ -78,6 +80,7 @@ const withdrawSteps = [
   require("./steps/SEP10/start"),
   require("./steps/SEP10/sign"),
   require("./steps/SEP10/send"),
+  require("./steps/withdraw/collect_withdraw_fields"),
   require("./steps/withdraw/get_withdraw"),
   require("./steps/withdraw/check_transactions_endpoint"),
   require("./steps/withdraw/confirm_payment"),
@@ -92,6 +95,7 @@ const depositSteps = [
   require("./steps/SEP10/start"),
   require("./steps/SEP10/sign"),
   require("./steps/SEP10/send"),
+  require("./steps/deposit/collect_deposit_fields"),
   require("./steps/deposit/get_deposit"),
   require("./steps/withdraw/check_transactions_endpoint"),
   require("./steps/deposit/show_close_button"),
